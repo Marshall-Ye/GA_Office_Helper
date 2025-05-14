@@ -3,11 +3,13 @@ import sys
 import os
 from docxtpl import DocxTemplate
 from datetime import datetime
-from parse_rows import parse_bd_row
-from airline_map import AIRLINE_MAP
+from pathlib import Path
 
-def get_bd_template_path():
-    return "BD_Sheet_Template.docx"
+def get_bd_template_path() -> str:
+    base = Path(sys.executable).parent if getattr(sys, 'frozen', False) \
+           else Path(__file__).parent
+    return str(base / "_internal" / "BD_Sheet_Template.docx")
+
 
 def get_output_folder():
     # same logic or import from main_gui
