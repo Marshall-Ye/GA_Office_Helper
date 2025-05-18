@@ -36,18 +36,6 @@
    'C:\\Users\\Marshall '
    'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
    'PYSOURCE'),
-  ('pyi_rth_pywintypes',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pywintypes.py',
-   'PYSOURCE'),
-  ('pyi_rth_pythoncom',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
-   'PYSOURCE'),
-  ('pyi_rth_setuptools',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
-   'PYSOURCE'),
   ('pyi_rth_pkgutil',
    'C:\\Users\\Marshall '
    'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
@@ -59,6 +47,18 @@
   ('pyi_rth_pkgres',
    'C:\\Users\\Marshall '
    'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgres.py',
+   'PYSOURCE'),
+  ('pyi_rth_setuptools',
+   'C:\\Users\\Marshall '
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
+   'PYSOURCE'),
+  ('pyi_rth_pythoncom',
+   'C:\\Users\\Marshall '
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
+   'PYSOURCE'),
+  ('pyi_rth_pywintypes',
+   'C:\\Users\\Marshall '
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pywintypes.py',
    'PYSOURCE'),
   ('pyi_rth__tkinter',
    'C:\\Users\\Marshall '

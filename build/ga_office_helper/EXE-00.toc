@@ -1,6 +1,6 @@
 ('D:\\MarshallFiles\\developer_stuff\\PTT_autogeneration\\build\\ga_office_helper\\GA '
  'Office Helper.exe',
- True,
+ False,
  False,
  True,
  ['D:\\MarshallFiles\\developer_stuff\\PTT_autogeneration\\_internal\\GA_Logo.ico'],
@@ -59,18 +59,6 @@
    'C:\\Users\\Marshall '
    'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
    'PYSOURCE'),
-  ('pyi_rth_pywintypes',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pywintypes.py',
-   'PYSOURCE'),
-  ('pyi_rth_pythoncom',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
-   'PYSOURCE'),
-  ('pyi_rth_setuptools',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
-   'PYSOURCE'),
   ('pyi_rth_pkgutil',
    'C:\\Users\\Marshall '
    'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
@@ -83,6 +71,18 @@
    'C:\\Users\\Marshall '
    'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgres.py',
    'PYSOURCE'),
+  ('pyi_rth_setuptools',
+   'C:\\Users\\Marshall '
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
+   'PYSOURCE'),
+  ('pyi_rth_pythoncom',
+   'C:\\Users\\Marshall '
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
+   'PYSOURCE'),
+  ('pyi_rth_pywintypes',
+   'C:\\Users\\Marshall '
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pywintypes.py',
+   'PYSOURCE'),
   ('pyi_rth__tkinter',
    'C:\\Users\\Marshall '
    'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth__tkinter.py',
@@ -93,9 +93,9 @@
  [],
  False,
  False,
- 1747253416,
- [('run.exe',
+ 1747526976,
+ [('runw.exe',
    'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],
  'C:\\Python313\\python313.dll')

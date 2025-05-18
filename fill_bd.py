@@ -5,9 +5,15 @@ from docxtpl import DocxTemplate
 from datetime import datetime
 from pathlib import Path
 
+
 def get_bd_template_path() -> str:
-    base = Path(sys.executable).parent if getattr(sys, 'frozen', False) \
-           else Path(__file__).parent
+    if hasattr(sys, "_MEIPASS"):
+        base = Path(sys._MEIPASS)
+    elif getattr(sys, "frozen", False):
+        base = Path(sys.executable).parent
+    else:
+        base = Path(__file__).parent
+
     return str(base / "_internal" / "BD_Sheet_Template.docx")
 
 
@@ -56,9 +62,16 @@ def generate_bd_sheet(record):
     }
     doc.render(context)
 
+    # ---- build a Windows-safe filename ---------------------------------
+    raw_mawb = record.get("mawb", "")
+    # keep only the first line and strip characters Win/macOS can’t use
+    safe_mawb = "".join(ch for ch in raw_mawb.splitlines()[0]
+                        if ch not in r'\/:*?"<>|')
+
     out_folder = get_output_folder()
-    out_filename = os.path.join(out_folder, f"BD_{record.get('mawb','')}.docx")
+    out_filename = os.path.join(out_folder, f"BD_{safe_mawb}.docx")
     doc.save(out_filename)
+
     print(f"Generated: {out_filename}")
     return out_filename
 

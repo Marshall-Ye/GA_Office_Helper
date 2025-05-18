@@ -1,42 +1,49 @@
 # ga_office_helper.spec  –  bundle whole _internal folder
+# -------------------------------------------------------
 from pathlib import Path
+
+from PyInstaller.utils.hooks        import collect_submodules
+from PyInstaller.building.build_main  import Analysis, PYZ, EXE, COLLECT
+from PyInstaller.building.datastruct import Tree      # Tree lives here
 import sys
-from PyInstaller.utils.hooks import collect_submodules
-from PyInstaller.building.build_main import Analysis, PYZ, EXE, COLLECT, Tree
 
-APP_VERSION = "1.0.3"
+APP_VERSION = "1.1.0"
 DIST_NAME   = f"GA_office_helper_{APP_VERSION}"
-HERE        = Path(sys.argv[0]).resolve().parent
 
+SRC_DIR = Path(sys.argv[0]).resolve().parent          # ← fix here
+INT_DIR = SRC_DIR / "_internal"                       # logo, templates …
+
+# ── ANALYSIS ────────────────────────────────────────────────
 a = Analysis(
     ["main_gui.py"],
-    pathex=[],
+    pathex=[str(SRC_DIR)],
     binaries=[],
-    datas=[],                              # we’ll add Tree() later
+    datas=[],
     hiddenimports=collect_submodules("mini_updater"),
 )
 
 pyz = PYZ(a.pure, a.zipped_data)
 
+# ── EXE (launcher) ──────────────────────────────────────────
 exe = EXE(
     pyz, a.scripts,
     exclude_binaries=True,
     name="GA Office Helper",
-    icon=str(HERE / "_internal" / "GA_Logo.ico"),
-    console=True,          # flip to False for release
+    icon=str(INT_DIR / "GA_Logo.ico"),
+    console=False,                 # flip to True while debugging
 )
 
-#  ⬇️  Copy entire _internal folder into the dist folder
-internal = Tree(str(HERE / "_internal"), prefix="_internal")
+# ── include entire _internal folder ------------------------
+payload = Tree(str(INT_DIR), prefix="_internal")
 
+# ── COLLECT  (final dist folder) ───────────────────────────
 COLLECT(
     exe,
     a.binaries,
     a.zipfiles,
     a.datas,
-    internal,          #  ←  THIS must be present
+    payload,                       # full _internal copied over
     strip=False,
     upx=True,
     name=DIST_NAME,
 )
-

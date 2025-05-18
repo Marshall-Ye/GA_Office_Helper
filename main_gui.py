@@ -1,20 +1,26 @@
 # main_gui.py ─ GA Office Helper (CustomTkinter edition)
-# ------------------------------------------------------
-import os, sys, threading
-from datetime import date, datetime
-import customtkinter as ctk
-import json
-from pathlib import Path
+# ======================================================
+from __future__ import annotations
 
+import json
+import os
+import sys
+import threading
+from datetime import date
+from pathlib import Path
 from tkinter import messagebox
+
+import customtkinter as ctk
 from PIL import Image
 
 from parse_rows import parse_ptt_rows_from_text, parse_bd_row
-from fill_ptt   import get_template_path, open_output_folder
-from fill_bd    import generate_bd_sheet
-from airline_map import AIRLINE_MAP
-from docxtpl     import DocxTemplate
-from docx2pdf    import convert
+from fill_ptt import (
+    FIRM_CHOICES,
+    DEFAULT_FIRM,
+    generate_ptt_for_records,
+    open_output_folder,
+)
+from fill_bd import generate_bd_sheet
 from mini_updater import check_and_update, __version__ as APP_VERSION
 
 
@@ -23,14 +29,17 @@ def get_exe_folder() -> str:
     return os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else os.getcwd()
 
 
-def get_output_folder() -> str:
-    out_dir = os.path.join(get_exe_folder(), "GeneratedDocuments")
-    os.makedirs(out_dir, exist_ok=True)
-    return out_dir
+def get_resource(*parts) -> Path:
+    if hasattr(sys, "_MEIPASS"):               # one-file exe
+        base = Path(sys._MEIPASS)
+    elif getattr(sys, "frozen", False):        # one-folder build
+        base = Path(sys.executable).parent
+    else:                                      # source run
+        base = Path(__file__).parent
+    return base / "_internal" / Path(*parts)
 
 
 def show_toast(parent, msg: str, duration: int = 3000) -> None:
-    """Tiny toast bottom-right."""
     try:
         toast = ctk.CTkToplevel(parent)
         toast.overrideredirect(True)
@@ -45,30 +54,35 @@ def show_toast(parent, msg: str, duration: int = 3000) -> None:
     except Exception:
         pass
 
+
 # ─────────────────── settings persistence ────────────────────
-SETTINGS_PATH = Path(get_exe_folder()) / "settings.json"
+INTERNAL_DIR = Path(get_exe_folder()) / "_internal"
+INTERNAL_DIR.mkdir(exist_ok=True)
+SETTINGS_PATH = INTERNAL_DIR / "settings.json"
+
 
 def load_settings() -> dict:
     if SETTINGS_PATH.exists():
         try:
-            return json.loads(SETTINGS_PATH.read_text(encoding="utf-8"))
+            return json.loads(SETTINGS_PATH.read_text("utf-8"))
         except json.JSONDecodeError:
             pass
     return {}
 
+
 def save_settings(data: dict) -> None:
     try:
-        SETTINGS_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        SETTINGS_PATH.write_text(json.dumps(data, indent=2), "utf-8")
     except Exception as e:
         print(f"[WARN] Could not save settings: {e}")
 
 
 # ───────────────────────── main window ─────────────────────────
 class GAOfficeHelper(ctk.CTk):
-    def __init__(self):
+    # ──────────────── init / layout ────────────────
+    def __init__(self) -> None:
         super().__init__()
 
-        # ---- style ----
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("dark-blue")
         self.title("GA Office Helper")
@@ -76,7 +90,6 @@ class GAOfficeHelper(ctk.CTk):
         self.minsize(920, 630)
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        # ---- tabs ----
         self.tabs = ctk.CTkTabview(self, width=960, height=540)
         self.tabs.pack(fill="both", expand=True, padx=10, pady=(10, 0))
 
@@ -85,183 +98,208 @@ class GAOfficeHelper(ctk.CTk):
         self._build_status_bar()
 
     # ───── PTT TAB ─────
-    def _build_ptt_tab(self):
+    def _build_ptt_tab(self) -> None:
         tab = self.tabs.add("PTT Generator")
 
-        # ---- instructions + firm code ---------------------------------
+        # instructions + firm selector
         top = ctk.CTkFrame(tab, fg_color="transparent", height=44)
         top.pack(fill="x", padx=10, pady=(10, 0))
 
-        # label (use place so it's truly centred)
         instr = ctk.CTkLabel(
             top,
             text="Paste multiple PTT rows here.\nThen click “Generate PTT Docs”.",
-            justify="center", anchor="center"
+            justify="center",
+            anchor="center",
         )
+        instr.place(relx=0.5, rely=0.0, anchor="n")
 
-        NUDGE_PX = 0  # ← bump ± pixels if it’s a hair off
-        instr.place(relx=0.5, rely=0.0, anchor="n", x=NUDGE_PX)
-
-        # firm-code group, stays at far right
-        self.firm_code_var = ctk.StringVar(value="WBS6")
+        # right-side firm selector
+        self.firm_var = ctk.StringVar(value=DEFAULT_FIRM)
         right = ctk.CTkFrame(top, fg_color="transparent")
         right.pack(side="right", padx=(0, 10))
-        ctk.CTkLabel(right, text="Firm Code:").pack(side="left", padx=(0, 4))
-        ctk.CTkOptionMenu(right, variable=self.firm_code_var, values=["WBS6", "W353"]) \
-            .pack(side="left")
+        ctk.CTkLabel(right, text="Firm:").pack(side="left", padx=(0, 4))
+        ctk.CTkOptionMenu(right, variable=self.firm_var, values=list(FIRM_CHOICES)).pack(
+            side="left"
+        )
 
-        # ── paste box ──
+        # paste box
         self.ptt_text = ctk.CTkTextbox(tab, width=940, height=260)
         self.ptt_text.pack(padx=10, pady=(10, 10), fill="both", expand=True)
 
-        # ── progress ──
-        self.ptt_bar = ctk.CTkProgressBar(tab, width=940); self.ptt_bar.set(0)
+        # progress widgets
+        self.ptt_bar = ctk.CTkProgressBar(tab, width=940)
         self.ptt_bar.pack(padx=10, pady=4)
-        self.ptt_label = ctk.CTkLabel(tab, text=""); self.ptt_label.pack()
+        self.ptt_bar.set(0)
+        self.ptt_label = ctk.CTkLabel(tab, text="")
+        self.ptt_label.pack()
 
-        # ── operator + generate row ──
+        # action row
         action = ctk.CTkFrame(tab, fg_color="transparent")
         action.pack(fill="x", padx=10, pady=(10, 4))
-
-        # left spacer (expand=True keeps center centred)
         ctk.CTkLabel(action, text="").pack(side="left", expand=True)
 
-        # center generate button
-        ctk.CTkButton(action, text="Generate PTT Docs",
-                      command=lambda: threading.Thread(
-                          target=self._generate_ptt_docs, daemon=True).start()
-                     ).pack(side="left", padx=188)
+        ctk.CTkButton(
+            action,
+            text="Generate PTT Docs",
+            command=self._start_ptt_generation,
+        ).pack(side="left", padx=188)
 
-        # right operator entry
+        # operator entry
         op_frame = ctk.CTkFrame(action, fg_color="transparent")
         op_frame.pack(side="right", padx=10)
         ctk.CTkLabel(op_frame, text="Operator:").pack(side="left", padx=(0, 4))
-        self.opname_var = ctk.StringVar()
-        # preload saved operator name (if any)
-        prev = load_settings().get("last_operator", "")
-        self.opname_var.set(prev)
+        self.opname_var = ctk.StringVar(value=load_settings().get("last_operator", ""))
+        ctk.CTkEntry(op_frame, width=140, textvariable=self.opname_var).pack(side="left")
 
-        ctk.CTkEntry(op_frame, width=140, textvariable=self.opname_var)\
-            .pack(side="left")
+        ctk.CTkButton(tab, text="Open Output Folder", command=open_output_folder).pack(
+            pady=(0, 10)
+        )
 
-        # ── open folder button ──
-        ctk.CTkButton(tab, text="Open Output Folder",
-                      command=open_output_folder).pack(pady=(0, 10))
-
-    def _generate_ptt_docs(self):
+    # ---- PTT workflow --------------------------------------------------
+    def _start_ptt_generation(self) -> None:
         raw = self.ptt_text.get("1.0", "end").strip()
         if not raw:
-            messagebox.showwarning("No Data", "Please paste some rows first."); return
+            messagebox.showwarning("No Data", "Please paste some rows first.")
+            return
         records = parse_ptt_rows_from_text(raw)
         if not records:
-            messagebox.showwarning("No Data", "No valid PTT rows found."); return
+            messagebox.showwarning("No Data", "No valid PTT rows found.")
+            return
 
         op_name = self.opname_var.get().strip()
         if not op_name:
-            messagebox.showwarning("Operator Required", "Please enter your name before generating.")
+            messagebox.showwarning(
+                "Operator Required", "Please enter your name before generating."
+            )
             return
 
-        folder, total = get_output_folder(), len(records)
-        firm_code, op_name = self.firm_code_var.get(), self.opname_var.get().strip()
-        today = date.today().strftime("%m/%d/%Y")
+        firm_key = self.firm_var.get()
 
+        # UI feedback – spinner in the same tab
         self.status_var.set("Generating PTT documents…")
-        self.ptt_bar.configure(mode="determinate"); self.ptt_bar.set(0)
+        self.ptt_bar.configure(mode="indeterminate")
+        self.ptt_bar.start()
+        self.ptt_label.configure(text="Working…")
+        self.update_idletasks()
 
-        for idx, rec in enumerate(records, start=1):
-            mawb, flt, pcs, wt = rec["mawb"], rec["flt"], rec["pieces"], rec["weight"]
-            airline = AIRLINE_MAP.get(mawb[:3], "Unknown Airline")
+        threading.Thread(
+            target=self._worker_ptt_generation,
+            args=(records, firm_key, op_name),
+            daemon=True,
+        ).start()
 
-            doc = DocxTemplate(get_template_path())
-            doc.render({
-                "MAWB": mawb, "PIECES": pcs, "WEIGHT": wt, "FLT": flt,
-                "AirlineName": airline, "TODAYS_DATE": today,
-                "FirmCode": firm_code, "OPName": op_name
-            })
-            docx_path = os.path.join(folder, f"PTT_{mawb}.docx")
-            doc.save(docx_path)
-            try:
-                convert(docx_path); os.remove(docx_path)
-            except Exception as e:
-                print(f"[WARN] PDF conversion failed: {e}")
+    def _worker_ptt_generation(self, records, firm_key: str, op_name: str) -> None:
+        pdfs = generate_ptt_for_records(records, firm_key, op_name)
 
-            self.ptt_bar.set(idx/total)
-            self.ptt_label.configure(text=f"Processing {idx}/{total}")
-            self.update_idletasks()
+        def _ui_done():
+            self.ptt_bar.stop()
+            self.ptt_bar.configure(mode="determinate")
+            self.ptt_bar.set(0)
+            self.ptt_label.configure(text="")
+            self.ptt_text.delete("1.0", "end")
 
-        self.ptt_text.delete("1.0", "end")
-        self.ptt_bar.set(0); self.ptt_label.configure(text="")
-        self.status_var.set(f"PTT done — {total} PDFs saved.")
+            self.status_var.set(f"PTT done — {len(pdfs)} PDF(s) saved.")
+            save_settings({"last_operator": op_name})
+            show_toast(self, f"Generated {len(pdfs)} PTT PDF(s)")
+            messagebox.showinfo("PTT Finished", f"Generated {len(pdfs)} PDF file(s).")
 
-        save_settings({"last_operator": op_name})
-
-        show_toast(self, f"Generated {total} PTT PDF(s)")
+        self.after(0, _ui_done)
 
     # ───── BD TAB ─────
-    def _build_bd_tab(self):
+    def _build_bd_tab(self) -> None:
         tab = self.tabs.add("B/D Sheet Generator")
-        ctk.CTkLabel(tab, text="Paste exactly one row for B/D sheet.\nThen click “Generate BD Doc”.")\
-            .pack(padx=10, pady=10)
+
+        ctk.CTkLabel(
+            tab,
+            text="Paste exactly one row for B/D sheet.\nThen click “Generate BD Doc”.",
+        ).pack(padx=10, pady=10)
+
         self.bd_text = ctk.CTkTextbox(tab, width=940, height=110)
         self.bd_text.pack(padx=10, pady=(0, 10))
-        ctk.CTkButton(tab, text="Generate BD Doc",
-                      command=lambda: threading.Thread(
-                          target=self._generate_bd_doc, daemon=True).start()
-                     ).pack(pady=(10, 4))
-        ctk.CTkButton(tab, text="Open Output Folder",
-                      command=open_output_folder).pack(pady=(0, 10))
 
-    def _generate_bd_doc(self):
+        ctk.CTkButton(
+            tab,
+            text="Generate BD Doc",
+            command=lambda: threading.Thread(
+                target=self._generate_bd_doc, daemon=True
+            ).start(),
+        ).pack(pady=(10, 4))
+
+        ctk.CTkButton(tab, text="Open Output Folder", command=open_output_folder).pack(
+            pady=(0, 10)
+        )
+
+    def _generate_bd_doc(self) -> None:
         raw = self.bd_text.get("1.0", "end").strip()
         if not raw:
-            messagebox.showwarning("No Data", "Please paste one row."); return
+            messagebox.showwarning("No Data", "Please paste one row.")
+            return
+
         record = parse_bd_row(raw)
         if not record.get("mawb"):
-            messagebox.showwarning("No Data", "No valid BD row."); return
+            messagebox.showwarning("No Data", "No valid BD row.")
+            return
 
         out_path = generate_bd_sheet(record)
         if not out_path or not os.path.exists(out_path):
-            show_toast(self, "BD doc not generated."); return
+            show_toast(self, "BD doc not generated.")
+            return
 
         self.bd_text.delete("1.0", "end")
         msg = [f"Clearance: {record['hold']}", f"MAWB: {record['mawb']}"]
         if record.get("carriers") == [("800-", ""), ("807-", ""), ("808-", "")]:
             msg.append("Please fill in details for USPS-CO")
+
         self.status_var.set(f"BD done — saved {os.path.basename(out_path)}")
         show_toast(self, "BD sheet generated.")
         messagebox.showinfo("B/D Done", "\n".join(msg))
 
-    # ───── status bar ─────
-    def _build_status_bar(self):
-        bar = ctk.CTkFrame(self, fg_color="#1f1f1f", height=28)
+    # ───── status bar / updater ─────
+    def _build_status_bar(self) -> None:
+        bar = ctk.CTkFrame(self, fg_color="#1f1f1f", height=46)
         bar.pack(fill="x", side="bottom")
-        try:
-            logo_small = ctk.CTkImage(Image.open(os.path.join(get_exe_folder(), "GA_Logo.png")),
-                                      size=(64, 32))
-            ctk.CTkLabel(bar, image=logo_small, text="").pack(side="left", padx=(6, 4))
-        except Exception: pass
-        ctk.CTkLabel(bar, text=f"GA Office Helper  v{APP_VERSION}")\
-            .pack(side="left", padx=(0, 8))
-        self.status_var = ctk.StringVar(value="Ready")
-        ctk.CTkLabel(bar, textvariable=self.status_var, anchor="w")\
-            .pack(side="left", fill="x", expand=True)
-        ctk.CTkButton(bar, text="Check for Update", width=140,
-                      command=lambda: threading.Thread(
-                          target=self._run_update, daemon=True).start()
-                     ).pack(side="right", padx=6, pady=2)
 
-    def _run_update(self):
+        left = ctk.CTkFrame(bar, fg_color="transparent")
+        left.pack(side="left", padx=6, pady=2)
+
+        try:
+            banner = ctk.CTkImage(Image.open(get_resource("GA_Logo.png")), size=(100, 30))
+            ctk.CTkLabel(left, image=banner, text="").pack(anchor="w")
+        except Exception as e:
+            print("[WARN] banner load failed:", e)
+
+        ctk.CTkLabel(left, text=f"GA Office Helper  v{APP_VERSION}", font=("", 12)).pack(
+            anchor="w", pady=(2, 0)
+        )
+
+        self.status_var = ctk.StringVar(value="Ready")
+        ctk.CTkLabel(bar, textvariable=self.status_var, anchor="w").pack(
+            side="left", fill="x", expand=True
+        )
+
+        ctk.CTkButton(
+            bar,
+            text="Check for Update",
+            width=140,
+            command=lambda: threading.Thread(
+                target=self._run_update, daemon=True
+            ).start(),
+        ).pack(side="right", padx=6, pady=6)
+
+    def _run_update(self) -> None:
         self.status_var.set("Checking for updates…")
         res = check_and_update()
         if res == "latest":
-            self.status_var.set("Already on latest version."); show_toast(self, "Up-to-date.")
+            self.status_var.set("Already on latest version.")
+            show_toast(self, "Up-to-date.")
         elif res.startswith("error:"):
             self.status_var.set("Update failed.")
             messagebox.showerror("Update Error", res.split(":", 1)[1])
 
     # ───── close ─────
-    def on_closing(self):
-        self.destroy(); sys.exit(0)
+    def on_closing(self) -> None:
+        self.destroy()
+        sys.exit(0)
 
 
 # ───────────────────────── run ─────────────────────────

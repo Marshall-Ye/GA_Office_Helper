@@ -1,125 +1,138 @@
-# parse_rows.py
+"""
+parse_rows.py
+=============
 
-def safe_get(lst, idx):
+Parse tab-delimited rows copied from Google Sheets / Excel that may contain
+
+* **Quoted cells** with embedded new-lines (`Alt + Enter` in Excel).
+* **Missing trailing columns** (we only rely on a subset anyway).
+
+The module exports two helpers:
+
+    parse_ptt_rows_from_text(raw_clipboard_text)  ->  list[dict]
+    parse_bd_row(raw_clipboard_text)              ->  dict
+
+Both return *plain* Python data that the rest of GA Office Helper consumes.
+"""
+
+from __future__ import annotations
+import csv
+from io import StringIO
+from typing import List, Dict
+
+
+# ---------------------------------------------------------------------------
+def _csv_rows(raw: str) -> List[List[str]]:
     """
-    Return the element at 'idx' if present, else an empty string.
+    Convert clipboard text to a list of rows (each row is a list of columns).
+
+    * delimiter = TAB
+    * quotechar = "
+    * embedded newlines inside quotes are kept inside the cell
     """
-    return lst[idx] if (idx < len(lst)) else ""
+    reader = csv.reader(
+        StringIO(raw),
+        delimiter="\t",
+        quotechar='"',
+        quoting=csv.QUOTE_MINIMAL,
+        skipinitialspace=False,
+        strict=False,
+    )
+    return list(reader)
 
 
-# -----------------------------------------------------------------------
-# PTT Parsing (Multiple Rows)
-# -----------------------------------------------------------------------
-def parse_ptt_rows_from_text(raw_text):
+def _safe(cols: List[str], idx: int) -> str:
+    """Return cols[idx].strip() or an empty string if missing."""
+    return cols[idx].strip() if idx < len(cols) else ""
+
+
+# ---------------------------------------------------------------------------
+#  PTT rows (MULTIPLE)
+# ---------------------------------------------------------------------------
+def parse_ptt_rows_from_text(raw_text: str) -> List[Dict[str, str]]:
     """
-    Parses multiple PTT rows (tab-separated) from a multi-line string.
-    For each line, it extracts:
-      - MAWB from column F (index 5)
-      - Flight No. from column J (index 9)
-      - Pieces from column L (index 11)
-      - Weight from column N (index 13)
+    Extract MAWB / Flight / Pieces / Weight from *every* valid row.
 
-    Returns a list of dictionaries with keys:
-      'mawb', 'flt', 'pieces', 'weight'
+    Expected column indexes (0-based) in the clipboard export:
 
-    This simpler approach assumes PTT rows do not contain embedded newlines.
+        5  MAWB
+        9  Flight
+       11  Pieces
+       13  Weight
     """
-    lines = raw_text.strip().splitlines()
-    records = []
-    for line in lines:
-        cols = line.split("\t")
-        if len(cols) < 14:
+    records: list[dict[str, str]] = []
+
+    for cols in _csv_rows(raw_text):
+        if len(cols) < 14:                        # critical columns missing
             continue
-        mawb = safe_get(cols, 5).strip()
-        flt = safe_get(cols, 9).strip()
-        pieces = safe_get(cols, 11).strip()
-        weight = safe_get(cols, 13).strip()
 
-        if not mawb:  # skip if no MAWB
+        mawb = _safe(cols, 5)
+        if not mawb:                             # skip blank MAWB rows
             continue
 
         records.append({
-            "mawb": mawb,
-            "flt": flt,
-            "pieces": pieces,
-            "weight": weight
+            "mawb":   mawb,
+            "flt":    _safe(cols, 9),
+            "pieces": _safe(cols, 11),
+            "weight": _safe(cols, 13),
         })
+
     return records
 
 
-# -----------------------------------------------------------------------
-# B/D Sheet Parsing (Single Row Only)
-# -----------------------------------------------------------------------
-def parse_bd_row(raw_text):
+# ---------------------------------------------------------------------------
+#  B/D sheet (SINGLE logical row)
+# ---------------------------------------------------------------------------
+def parse_bd_row(raw_text: str) -> Dict[str, str]:
     """
-    Expects exactly one row for B/D.
-    We'll parse:
-      - MAWB: col F (5)
-      - Pieces: col L (11)
-      - PMC: col P (15)
-      - hold: col U (20)
-      - last_mile: col V (21)
+    Parse exactly ONE business row for the B/D generator.
 
-    Then we check columns W–Z for normal carriers:
-      YUN2 => col W (22)
-      UPS  => col X (23)
-      UNI  => col Y (24)
-      YWE  => col Z (25)
+    Column layout we care about (0-based):
 
-    If column AA (26) is not empty => USPS override:
-      carriers = [("800-", ""), ("807-", ""), ("808-", "")]
+         5  MAWB                  11  Pieces            15  PMC
+        20  Hold                 21  Last-mile          22–25 Carriers (W–Z)
+        26  USPS override flag   (a non-empty cell signals USPS-CO)
 
-    This means we skip columns W–Z in that scenario.
+    * If MAWB column is empty → returns {}.
+    * Embedded newlines inside PMC are replaced by ', ' for prettiness.
     """
-    cols = raw_text.strip().split("\t")
-    if len(cols) < 27:  # need at least up to index 26 (AA)
-        return {}
+    # Find the *first* row with a non-empty MAWB
+    for cols in _csv_rows(raw_text):
+        mawb = _safe(cols, 5)
+        if not mawb:
+            continue                                 # keep searching
 
+        hold_str = _safe(cols, 20)
+        if hold_str.isdigit():                       # "2" → "2 HOLD"
+            hold_str += " HOLD"
 
-    hold_str = safe_get(cols, 20).strip()
-    # 1) If hold_str is purely numeric, append " HOLD"
-    #    e.g. "2" => "2 HOLD"
-    if hold_str.isdigit():
-        hold_str = hold_str + " HOLD"
-
-    record = {
-        "mawb": safe_get(cols, 5).strip(),
-        "pieces": safe_get(cols, 11).strip(),
-        "pmc": safe_get(cols, 15).strip(),
-        "hold": hold_str,
-        "last_mile": safe_get(cols, 21).strip(),
-        "carriers": []
-    }
-    if not record["mawb"]:
-        # no valid row
-        return {}
-
-    # Check if USPS-CO column (AA => index 26) is non-empty
-    usps_val = safe_get(cols, 26).strip()
-    if usps_val:
-        # If there's anything in column AA => override with USPS logic
-        # Up to three lines, all with empty ctn counts
-        record["carriers"] = [
-            ("800-", ""),
-            ("807-", ""),
-            ("808-", "")
-        ]
-    else:
-        # Normal approach: check columns W–Z for YUN2, UPS, UNI, YWE
-        carrier_cols = {
-            "YUN2": 22,  # W
-            "UPS":  23,  # X
-            "UNI":  24,  # Y
-            "YWE":  25,  # Z
+        # --- basic fields ---------------------------------------------------
+        record: dict[str, str] = {
+            "mawb":       mawb,
+            "pieces":     _safe(cols, 11),
+            "pmc":        _safe(cols, 15).replace("\n", ", "),
+            "hold":       hold_str,
+            "last_mile":  _safe(cols, 21),
+            "carriers":   [],
         }
-        found_carriers = []
-        for name, idx in carrier_cols.items():
-            ctn = safe_get(cols, idx).strip()
-            if ctn:
-                found_carriers.append((name, ctn))
 
-        # Keep up to 3
-        found_carriers = found_carriers[:3]
-        record["carriers"] = found_carriers
+        # --- carriers logic -------------------------------------------------
+        if _safe(cols, 26):                          # USPS-CO override
+            record["carriers"] = [("800-", ""), ("807-", ""), ("808-", "")]
+        else:
+            carrier_cols = {
+                "YUN2": 22,   # W
+                "UPS":  23,   # X
+                "UNI":  24,   # Y
+                "YWE":  25,   # Z
+            }
+            record["carriers"] = [
+                (name, _safe(cols, idx))
+                for name, idx in carrier_cols.items()
+                if _safe(cols, idx)
+            ][:3]                                     # max three entries
 
-    return record
+        return record
+
+    # No usable row found
+    return {}
