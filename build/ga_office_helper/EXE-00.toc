@@ -1,6 +1,6 @@
 ('D:\\MarshallFiles\\developer_stuff\\PTT_autogeneration\\build\\ga_office_helper\\GA '
  'Office Helper.exe',
- False,
+ True,
  False,
  True,
  ['D:\\MarshallFiles\\developer_stuff\\PTT_autogeneration\\_internal\\GA_Logo.ico'],
@@ -93,9 +93,9 @@
  [],
  False,
  False,
- 1747526976,
- [('runw.exe',
+ 1747781258,
+ [('run.exe',
    'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
+   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
    'EXECUTABLE')],
  'C:\\Python313\\python313.dll')

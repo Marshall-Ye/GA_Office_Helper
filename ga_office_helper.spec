@@ -30,7 +30,7 @@ exe = EXE(
     exclude_binaries=True,
     name="GA Office Helper",
     icon=str(INT_DIR / "GA_Logo.ico"),
-    console=False,                 # flip to True while debugging
+    console=True,                 # flip to True while debugging
 )
 
 # ── include entire _internal folder ------------------------

@@ -102,7 +102,7 @@ def parse_bd_row(raw_text: str) -> Dict[str, str]:
         if not mawb:
             continue                                 # keep searching
 
-        hold_str = _safe(cols, 20)
+        hold_str = _safe(cols, 22)
         if hold_str.isdigit():                       # "2" → "2 HOLD"
             hold_str += " HOLD"
 
@@ -110,21 +110,19 @@ def parse_bd_row(raw_text: str) -> Dict[str, str]:
         record: dict[str, str] = {
             "mawb":       mawb,
             "pieces":     _safe(cols, 11),
-            "pmc":        _safe(cols, 15).replace("\n", ", "),
+            "pmc":        _safe(cols, 17).replace("\n", ", "),
             "hold":       hold_str,
-            "last_mile":  _safe(cols, 21),
+            "last_mile":  _safe(cols, 23),
             "carriers":   [],
         }
 
         # --- carriers logic -------------------------------------------------
-        if _safe(cols, 26):                          # USPS-CO override
+        if _safe(cols, 28):                          # USPS-CO override
             record["carriers"] = [("800-", ""), ("807-", ""), ("808-", "")]
         else:
             carrier_cols = {
-                "YUN2": 22,   # W
-                "UPS":  23,   # X
-                "UNI":  24,   # Y
-                "YWE":  25,   # Z
+                "YUN2": 24,   # Y
+                "AGS":  25,   # Z
             }
             record["carriers"] = [
                 (name, _safe(cols, idx))
