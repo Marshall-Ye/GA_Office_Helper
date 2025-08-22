@@ -13,7 +13,7 @@ from pathlib import Path
 import requests
 
 # ---------------------------------------------------------------------------
-__version__ = "1.1.0"                                     # bump each release
+__version__ = "1.2.1"                                     # bump each release
 REPO_API    = ("https://api.github.com/repos/Marshall-Ye/"
                "PTT_autogeneration/releases/latest")        # ← your repo
 ASSET_PREFIX = "GA_office_helper_"                        # asset zip prefix

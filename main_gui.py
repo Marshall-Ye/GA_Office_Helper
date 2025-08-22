@@ -294,6 +294,7 @@ class GAOfficeHelper(ctk.CTk):
             show_toast(self, "Up-to-date.")
         elif res.startswith("error:"):
             self.status_var.set("Update failed.")
+
             messagebox.showerror("Update Error", res.split(":", 1)[1])
 
     # ───── close ─────

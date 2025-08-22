@@ -29,40 +29,34 @@
    'D:\\MarshallFiles\\developer_stuff\\PTT_autogeneration\\build\\ga_office_helper\\localpycs\\pyimod04_pywin32.pyc',
    'PYMODULE'),
   ('pyiboot01_bootstrap',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\loader\\pyiboot01_bootstrap.py',
+   'C:\\Python313\\Lib\\site-packages\\PyInstaller\\loader\\pyiboot01_bootstrap.py',
    'PYSOURCE'),
   ('pyi_rth_inspect',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
+   'C:\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_inspect.py',
    'PYSOURCE'),
   ('pyi_rth_pkgutil',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
+   'C:\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgutil.py',
    'PYSOURCE'),
   ('pyi_rth_multiprocessing',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_multiprocessing.py',
+   'C:\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_multiprocessing.py',
+   'PYSOURCE'),
+  ('pyi_rth_cryptography_openssl',
+   'C:\\Python313\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_cryptography_openssl.py',
    'PYSOURCE'),
   ('pyi_rth_pkgres',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgres.py',
+   'C:\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_pkgres.py',
    'PYSOURCE'),
   ('pyi_rth_setuptools',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
+   'C:\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth_setuptools.py',
    'PYSOURCE'),
   ('pyi_rth_pythoncom',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
+   'C:\\Python313\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pythoncom.py',
    'PYSOURCE'),
   ('pyi_rth_pywintypes',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pywintypes.py',
+   'C:\\Python313\\Lib\\site-packages\\_pyinstaller_hooks_contrib\\rthooks\\pyi_rth_pywintypes.py',
    'PYSOURCE'),
   ('pyi_rth__tkinter',
-   'C:\\Users\\Marshall '
-   'Ye\\PycharmProjects\\PythonProject\\.venv\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth__tkinter.py',
+   'C:\\Python313\\Lib\\site-packages\\PyInstaller\\hooks\\rthooks\\pyi_rth__tkinter.py',
    'PYSOURCE'),
   ('main_gui',
    'D:\\MarshallFiles\\developer_stuff\\PTT_autogeneration\\main_gui.py',

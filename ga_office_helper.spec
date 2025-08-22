@@ -7,7 +7,7 @@ from PyInstaller.building.build_main  import Analysis, PYZ, EXE, COLLECT
 from PyInstaller.building.datastruct import Tree      # Tree lives here
 import sys
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.1"
 DIST_NAME   = f"GA_office_helper_{APP_VERSION}"
 
 SRC_DIR = Path(sys.argv[0]).resolve().parent          # ← fix here
