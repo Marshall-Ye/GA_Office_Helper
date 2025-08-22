@@ -1,0 +1,9 @@
+
+*
+
+!*.py
+!*.spec
+!_internal/
+
+!.gitignore
+
