@@ -7,12 +7,8 @@ Parse tab-delimited rows copied from Google Sheets / Excel that may contain
 * **Quoted cells** with embedded new-lines (`Alt + Enter` in Excel).
 * **Missing trailing columns** (we only rely on a subset anyway).
 
-The module exports two helpers:
-
-    parse_ptt_rows_from_text(raw_clipboard_text)  ->  list[dict]
-    parse_bd_row(raw_clipboard_text)              ->  dict
-
-Both return *plain* Python data that the rest of GA Office Helper consumes.
+The module exports `parse_ptt_rows_from_text` which returns plain Python data
+that the rest of GA Office Helper consumes.
 """
 
 from __future__ import annotations
@@ -80,57 +76,3 @@ def parse_ptt_rows_from_text(raw_text: str) -> List[Dict[str, str]]:
     return records
 
 
-# ---------------------------------------------------------------------------
-#  B/D sheet (SINGLE logical row)
-# ---------------------------------------------------------------------------
-def parse_bd_row(raw_text: str) -> Dict[str, str]:
-    """
-    Parse exactly ONE business row for the B/D generator.
-
-    Column layout we care about (0-based):
-
-         5  MAWB                  11  Pieces            15  PMC
-        20  Hold                 21  Last-mile          22–25 Carriers (W–Z)
-        26  USPS override flag   (a non-empty cell signals USPS-CO)
-
-    * If MAWB column is empty → returns {}.
-    * Embedded newlines inside PMC are replaced by ', ' for prettiness.
-    """
-    # Find the *first* row with a non-empty MAWB
-    for cols in _csv_rows(raw_text):
-        mawb = _safe(cols, 5)
-        if not mawb:
-            continue                                 # keep searching
-
-        hold_str = _safe(cols, 22)
-        if hold_str.isdigit():                       # "2" → "2 HOLD"
-            hold_str += " HOLD"
-
-        # --- basic fields ---------------------------------------------------
-        record: dict[str, str] = {
-            "mawb":       mawb,
-            "pieces":     _safe(cols, 11),
-            "pmc":        _safe(cols, 17).replace("\n", ", "),
-            "hold":       hold_str,
-            "last_mile":  _safe(cols, 23),
-            "carriers":   [],
-        }
-
-        # --- carriers logic -------------------------------------------------
-        if _safe(cols, 28):                          # USPS-CO override
-            record["carriers"] = [("800-", ""), ("807-", ""), ("808-", "")]
-        else:
-            carrier_cols = {
-                "YUN2": 24,   # Y
-                "AGS":  25,   # Z
-            }
-            record["carriers"] = [
-                (name, _safe(cols, idx))
-                for name, idx in carrier_cols.items()
-                if _safe(cols, idx)
-            ][:3]                                     # max three entries
-
-        return record
-
-    # No usable row found
-    return {}

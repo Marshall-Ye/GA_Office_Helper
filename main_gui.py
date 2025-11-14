@@ -13,9 +13,8 @@ from tkinter import messagebox
 import customtkinter as ctk
 from PIL import Image
 
-from parse_rows import parse_ptt_rows_from_text, parse_bd_row
+from parse_rows import parse_ptt_rows_from_text
 from fill_ptt import generate_ptt_for_records, open_output_folder
-from fill_bd import generate_bd_sheet
 from mini_updater import check_and_update, __version__ as APP_VERSION
 
 
@@ -89,7 +88,6 @@ class GAOfficeHelper(ctk.CTk):
         self.tabs.pack(fill="both", expand=True, padx=10, pady=(10, 0))
 
         self._build_ptt_tab()
-        self._build_bd_tab()
         self._build_status_bar()
 
     # ───── PTT TAB ─────
@@ -188,55 +186,6 @@ class GAOfficeHelper(ctk.CTk):
             messagebox.showinfo("PTT Finished", f"Generated {len(pdfs)} PDF file(s).")
 
         self.after(0, _ui_done)
-
-    # ───── BD TAB ─────
-    def _build_bd_tab(self) -> None:
-        tab = self.tabs.add("B/D Sheet Generator")
-
-        ctk.CTkLabel(
-            tab,
-            text="Paste exactly one row for B/D sheet.\nThen click “Generate BD Doc”.",
-        ).pack(padx=10, pady=10)
-
-        self.bd_text = ctk.CTkTextbox(tab, width=940, height=110)
-        self.bd_text.pack(padx=10, pady=(0, 10))
-
-        ctk.CTkButton(
-            tab,
-            text="Generate BD Doc",
-            command=lambda: threading.Thread(
-                target=self._generate_bd_doc, daemon=True
-            ).start(),
-        ).pack(pady=(10, 4))
-
-        ctk.CTkButton(tab, text="Open Output Folder", command=open_output_folder).pack(
-            pady=(0, 10)
-        )
-
-    def _generate_bd_doc(self) -> None:
-        raw = self.bd_text.get("1.0", "end").strip()
-        if not raw:
-            messagebox.showwarning("No Data", "Please paste one row.")
-            return
-
-        record = parse_bd_row(raw)
-        if not record.get("mawb"):
-            messagebox.showwarning("No Data", "No valid BD row.")
-            return
-
-        out_path = generate_bd_sheet(record)
-        if not out_path or not os.path.exists(out_path):
-            show_toast(self, "BD doc not generated.")
-            return
-
-        self.bd_text.delete("1.0", "end")
-        msg = [f"Clearance: {record['hold']}", f"MAWB: {record['mawb']}"]
-        if record.get("carriers") == [("800-", ""), ("807-", ""), ("808-", "")]:
-            msg.append("Please fill in details for USPS-CO")
-
-        self.status_var.set(f"BD done — saved {os.path.basename(out_path)}")
-        show_toast(self, "BD sheet generated.")
-        messagebox.showinfo("B/D Done", "\n".join(msg))
 
     # ───── status bar / updater ─────
     def _build_status_bar(self) -> None:
