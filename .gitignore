@@ -4,6 +4,7 @@
 !*.py
 !*.spec
 !_internal/
+!_internal/**
 
 !.gitignore
 

@@ -14,12 +14,7 @@ import customtkinter as ctk
 from PIL import Image
 
 from parse_rows import parse_ptt_rows_from_text, parse_bd_row
-from fill_ptt import (
-    FIRM_CHOICES,
-    DEFAULT_FIRM,
-    generate_ptt_for_records,
-    open_output_folder,
-)
+from fill_ptt import generate_ptt_for_records, open_output_folder
 from fill_bd import generate_bd_sheet
 from mini_updater import check_and_update, __version__ as APP_VERSION
 
@@ -113,15 +108,6 @@ class GAOfficeHelper(ctk.CTk):
         )
         instr.place(relx=0.5, rely=0.0, anchor="n")
 
-        # right-side firm selector
-        self.firm_var = ctk.StringVar(value=DEFAULT_FIRM)
-        right = ctk.CTkFrame(top, fg_color="transparent")
-        right.pack(side="right", padx=(0, 10))
-        ctk.CTkLabel(right, text="Firm:").pack(side="left", padx=(0, 4))
-        ctk.CTkOptionMenu(right, variable=self.firm_var, values=list(FIRM_CHOICES)).pack(
-            side="left"
-        )
-
         # paste box
         self.ptt_text = ctk.CTkTextbox(tab, width=940, height=260)
         self.ptt_text.pack(padx=10, pady=(10, 10), fill="both", expand=True)
@@ -173,8 +159,6 @@ class GAOfficeHelper(ctk.CTk):
             )
             return
 
-        firm_key = self.firm_var.get()
-
         # UI feedback – spinner in the same tab
         self.status_var.set("Generating PTT documents…")
         self.ptt_bar.configure(mode="indeterminate")
@@ -184,12 +168,12 @@ class GAOfficeHelper(ctk.CTk):
 
         threading.Thread(
             target=self._worker_ptt_generation,
-            args=(records, firm_key, op_name),
+            args=(records, op_name),
             daemon=True,
         ).start()
 
-    def _worker_ptt_generation(self, records, firm_key: str, op_name: str) -> None:
-        pdfs = generate_ptt_for_records(records, firm_key, op_name)
+    def _worker_ptt_generation(self, records, op_name: str) -> None:
+        pdfs = generate_ptt_for_records(records, op_name)
 
         def _ui_done():
             self.ptt_bar.stop()

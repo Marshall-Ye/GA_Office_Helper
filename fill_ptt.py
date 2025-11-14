@@ -4,7 +4,7 @@ fill_ptt.py – backend helpers for GA Office Helper
 
 • Locates the PTT Word template inside the bundled `_internal/` folder
   (works both from source and from a PyInstaller build).
-• Defines firm metadata (GA3 / Pinto) and exposes
+• Defines GA3 firm metadata and exposes
   `generate_ptt_for_records()` which turns parsed rows into PDF files.
 """
 
@@ -37,23 +37,13 @@ else:  # macOS / Linux – docx2pdf won’t run anyway, but keep no-op stubs
     def _com_end() -> None:   ...
 # ─────────────────────────────────────────────────────────────────────
 
-# ─────────────── firm lookup table ───────────────────────────────────
-FIRM_MAP: dict[str, dict[str, str]] = {
-    "GA3": {
-        "FirmCode":      "WBS6",
-        "FirmName":      "GOLDEN ARCUS",
-        "FullFirmName":  "GOLDEN ARCUS INTERNATIONAL CORP",
-        "Address":       "5343 W. Imperial Hwy Ste 700, Los Angeles CA 90045",
-    },
-    "Pinto": {
-        "FirmCode":      "W353",
-        "FirmName":      "PINTO EXPRESS",
-        "FullFirmName":  "Pinto Express",
-        "Address":       "1001 W Walnut St, Compton CA 90220",
-    },
+# ─────────────── firm metadata ───────────────────────────────────────
+FIRM_INFO: dict[str, str] = {
+    "FirmCode":     "WBS6",
+    "FirmName":     "GOLDEN ARCUS",
+    "FullFirmName": "GOLDEN ARCUS INTERNATIONAL CORP",
+    "Address":      "5343 W. Imperial Hwy Ste 700, Los Angeles CA 90045",
 }
-FIRM_CHOICES: tuple[str, ...] = tuple(FIRM_MAP.keys())   # ('GA3', 'Pinto')
-DEFAULT_FIRM: str = "GA3"
 
 # ─────────────── locate bundled template ─────────────────────────────
 def get_template_path() -> str:
@@ -85,13 +75,11 @@ def open_output_folder() -> None:
 # ─────────────── main generator ──────────────────────────────────────
 def generate_ptt_for_records(
     records: List[dict],
-    firm_key: str = DEFAULT_FIRM,
     op_name: str = "",
 ) -> List[str]:
     """
     Convert parsed *records* into PDF PTTs and return the PDF paths.
     """
-    firm   = FIRM_MAP.get(firm_key, FIRM_MAP[DEFAULT_FIRM])
     today  = date.today().strftime("%m/%d/%Y")
     outdir = get_output_folder()
     pdfs   = []
@@ -108,8 +96,8 @@ def generate_ptt_for_records(
             doc.render({
                 "MAWB": mawb, "PIECES": pcs, "WEIGHT": wt, "FLT": flt,
                 "AirlineName": airline, "TODAYS_DATE": today,
-                "FirmCode": firm["FirmCode"], "FirmName": firm["FirmName"],
-                "FullFirmName": firm["FullFirmName"], "Address": firm["Address"],
+                "FirmCode": FIRM_INFO["FirmCode"], "FirmName": FIRM_INFO["FirmName"],
+                "FullFirmName": FIRM_INFO["FullFirmName"], "Address": FIRM_INFO["Address"],
                 "OPName": op_name,
             })
 
@@ -146,7 +134,5 @@ if __name__ == "__main__":                         # pragma: no cover
 
     rows = parse_ptt_rows_from_text("\n".join(buf))
     op   = input("Operator name: ").strip()
-    firm = input(f"Firm ({'/'.join(FIRM_CHOICES)}): ").strip() or DEFAULT_FIRM
-
-    for p in generate_ptt_for_records(rows, firm, op):
+    for p in generate_ptt_for_records(rows, op):
         print("Saved", p)
